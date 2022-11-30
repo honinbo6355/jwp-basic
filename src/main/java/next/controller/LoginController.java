@@ -11,41 +11,29 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import core.db.DataBase;
+import next.handler.DispatcherServlet;
 import next.model.User;
 
-@WebServlet(value = { "/users/login", "/users/loginForm" })
-public class LoginController extends HttpServlet {
+public class LoginController implements Controller {
     private static final long serialVersionUID = 1L;
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        forward("/user/login.jsp", req, resp);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String userId = req.getParameter("userId");
-        String password = req.getParameter("password");
+    public String execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userId = request.getParameter("userId");
+        String password = request.getParameter("password");
         User user = DataBase.findUserById(userId);
         if (user == null) {
-            req.setAttribute("loginFailed", true);
-            forward("/user/login.jsp", req, resp);
-            return;
+            request.setAttribute("loginFailed", true);
+            return "/user/login.jsp";
         }
 
         if (user.matchPassword(password)) {
-            HttpSession session = req.getSession();
+            HttpSession session = request.getSession();
             session.setAttribute(UserSessionUtils.USER_SESSION_KEY, user);
-            resp.sendRedirect("/");
+            return DispatcherServlet.PREFIX_REDIRECT;
         } else {
-            req.setAttribute("loginFailed", true);
-            forward("/user/login.jsp", req, resp);
+            request.setAttribute("loginFailed", true);
+            return "/user/login.jsp";
         }
-    }
-
-    private void forward(String forwardUrl, HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-        RequestDispatcher rd = req.getRequestDispatcher(forwardUrl);
-        rd.forward(req, resp);
     }
 }
